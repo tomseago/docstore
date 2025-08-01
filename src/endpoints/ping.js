@@ -47,6 +47,8 @@ export class Ping extends OpenAPIRoute {
         // Get validated data
         const data = await this.getValidatedData();
 
+        console.log("Data is:");
+        console.log(data);
         // Retrieve the validated slug
         const { designator } = data.params;
 

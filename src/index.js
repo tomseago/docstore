@@ -15,7 +15,7 @@ const openapi = fromHono(app, {
 });
 
 // Register OpenAPI endpoints
-openapi.get("/api/ping", Ping);
+openapi.get("/api/ping/:designator", Ping);
 // openapi.get("/api/tasks", TaskList);
 // openapi.post("/api/tasks", TaskCreate);
 // openapi.get("/api/tasks/:taskSlug", TaskFetch);
