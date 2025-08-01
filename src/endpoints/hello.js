@@ -1,9 +1,10 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 
-export class Hello extends OpenAPIRoute {
+export class AuthHello extends OpenAPIRoute {
     schema = {
-        summary: "Return a hello world message",
+        summary: "Return a hello world message (with JWT auth required)",
+        security: [{ bearerAuth: [] }], // Specify the JWT security scheme
         responses: {
             "200": {
                 description: "Returns a hello world message",
@@ -13,14 +14,17 @@ export class Hello extends OpenAPIRoute {
                     },
                 },
             },
+            "401": {
+                description: "JWT token is missing or invalid",
+            },
         },
     };
 
     async handle() {
-        return new Response("Hello World", {
+        return new Response("Hello World (authenticated)", {
             headers: {
-                "Content-Type": "text/plain"
-            }
+                "Content-Type": "text/plain",
+            },
         });
     }
 }
