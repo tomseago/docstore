@@ -19,6 +19,9 @@ const app = new Hono();
 
 app.use('/auth/*', (c, next) => {
 
+    console.log("Variables");
+    console.log(c.env);
+
     var secret = c.env.AUTH_SECRET;
     if (!secret) {
         secret = 'DEFAULT_AUTH_SECRET';
