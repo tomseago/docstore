@@ -9,6 +9,9 @@
 	"compatibility_date": "2025-08-01",
 	"observability": {
 		"enabled": true
+	},
+	"vars": {
+		"AUTH_SECRET": "not_secret"
 	}
 	/**
 	 * Smart Placement
