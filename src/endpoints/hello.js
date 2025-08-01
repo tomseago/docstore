@@ -15,7 +15,7 @@ export class AuthHello extends OpenAPIRoute {
                 },
             },
             "401": {
-                description: "JWT token is missing or invalid",
+                description: "Auth token is missing or invalid",
             },
         },
     };
