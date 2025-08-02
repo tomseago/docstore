@@ -19,7 +19,7 @@ const app = new Hono();
 
 app.use('/auth/*', (c, next) => {
 
-    console.log("Variables from env");
+    console.log("env variables");
     console.log(c.env);
 
     var secret = c.env.AUTH_SECRET;
