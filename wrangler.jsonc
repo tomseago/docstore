@@ -11,7 +11,6 @@
 		"enabled": true
 	},
 	"vars": {
-		"AUTH_SECRET": "not_secret"
 	}
 	/**
 	 * Smart Placement
