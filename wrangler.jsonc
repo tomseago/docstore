@@ -10,6 +10,10 @@
 	"observability": {
 		"enabled": true
 	},
+	// OMG I can't believe this isn't the default!!!
+	// We need to specify keep_vars:true or else the definitions
+	// set in the dashboard are deleted. Lame!
+	"keep_vars": true,
 	"vars": {
 	}
 	/**
