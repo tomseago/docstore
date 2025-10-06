@@ -1,3 +1,6 @@
+
+
+
 import { fromHono } from "chanfana";
 import { Hono } from "hono";
 import { bearerAuth } from 'hono/bearer-auth'
@@ -11,6 +14,12 @@ import { GetDoc } from "./endpoints/docs/get-doc";
 import {DeleteDoc} from "./endpoints/docs/delete-doc";
 import {PatchDoc} from "./endpoints/docs/patch-doc";
 import {ReplaceDoc} from "./endpoints/docs/replace-doc";
+import {GetDocChildren} from "./endpoints/docs/children-docs";
+import {CreateChildDoc} from "./endpoints/docs/create-child-doc";
+import {MoveDoc} from "./endpoints/docs/move-doc";
+import {GetDocAncestors} from "./endpoints/docs/get-ancestors";
+import {GetDocTree} from "./endpoints/docs/get-tree";
+import {SearchDocs} from "./endpoints/docs/search-doc";
 
 
 // Start a Hono app
@@ -66,6 +75,14 @@ openapi.get("/auth/docs/:id", GetDoc);
 openapi.delete("/auth/docs/:id", DeleteDoc);
 openapi.patch("/auth/docs/:id", PatchDoc);
 openapi.put("/auth/docs/:id", ReplaceDoc);
+
+openapi.get("/auth/docs/:id/children", GetDocChildren);
+openapi.post("/auth/docs/:id/children", CreateChildDoc);
+openapi.patch("/auth/docs/:id/move", MoveDoc);
+
+openapi.get("/auth/docs/:id/ancestors", GetDocAncestors );
+//openapi.get("/auth/docs/:id/tree", GetDocTree );
+openapi.get("/auth/search", SearchDocs );
 
 // You may also register routes for non OpenAPI directly on Hono
 // app.get('/test', (c) => c.text('Hono!'))
