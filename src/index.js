@@ -8,6 +8,9 @@ import { Ping } from "./endpoints/ping";
 
 import { CreateDoc } from "./endpoints/docs/create-doc";
 import { GetDoc } from "./endpoints/docs/get-doc";
+import {DeleteDoc} from "./endpoints/docs/delete-doc";
+import {PatchDoc} from "./endpoints/docs/patch-doc";
+import {ReplaceDoc} from "./endpoints/docs/replace-doc";
 
 
 // Start a Hono app
@@ -58,9 +61,11 @@ openapi.get("/api/ping/:designator", Ping);
 // So we can test auth
 openapi.get("/auth/hello", AuthHello);
 
-openapi.post("/auth/docs/create", CreateDoc);
+openapi.post("/auth/docs", CreateDoc);
 openapi.get("/auth/docs/:id", GetDoc);
-
+openapi.delete("/auth/docs/:id", DeleteDoc);
+openapi.patch("/auth/docs/:id", PatchDoc);
+openapi.put("/auth/docs/:id", ReplaceDoc);
 
 // You may also register routes for non OpenAPI directly on Hono
 // app.get('/test', (c) => c.text('Hono!'))
