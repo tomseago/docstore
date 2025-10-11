@@ -1,104 +1,125 @@
-import {OpenAPIRoute, Str} from "chanfana";
+import { OpenAPIRoute, Str } from "chanfana";
 import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 
 extendZodWithOpenApi(z);
 
-// OpenAPI-safe (non-recursive) facade for docs
+/**
+ * Non-recursive tree node facade with explicit OpenAPI property definitions.
+ * This makes the Swagger example and structure visible.
+ */
 const TreeNode = z
     .object({
-        id: z.string().openapi({ type: "string", description: "Document ID" }),
-        title: z.string().openapi({ type: "string", description: "Document title" }),
+        id: z.string().openapi({
+            type: "string",
+            description: "Unique document ID",
+            example: "doc_123",
+        }),
+        title: z.string().openapi({
+            type: "string",
+            description: "Document title",
+            example: "Project Overview",
+        }),
         children: z
             .array(
-                z.object({}).passthrough().openapi({
-                    type: "object",
-                    description:
-                        "Child node (recursively shaped at runtime). OpenAPI keeps this generic to avoid recursion.",
+                z.object({
+                    id: z.string().openapi({
+                        type: "string",
+                        description: "Child document ID",
+                        example: "doc_456",
+                    }),
+                    title: z.string().openapi({
+                        type: "string",
+                        description: "Child document title",
+                        example: "Introduction",
+                    }),
                 })
             )
             .optional()
-            .openapi({ type: "array" }),
+            .openapi({
+                type: "array",
+                description:
+                    "Child nodes (recursively shaped at runtime). Only one level shown for documentation clarity.",
+            }),
     })
     .openapi({
         type: "object",
         refId: "TreeNode",
-        description: "Tree node (non-recursive OpenAPI facade).",
+        description: "A document node in the tree hierarchy.",
+        example: {
+            id: "root-1",
+            title: "Root Node",
+            children: [
+                { id: "child-1", title: "First child" },
+                { id: "child-2", title: "Second child" },
+            ],
+        },
     });
-// const TreeNode = z
-//     .lazy(() =>
-//         z.object({
-//             id: z.string().openapi({ type: "string", description: "Document ID" }),
-//             title: z.string().openapi({ type: "string", description: "Document title" }),
-//             // Explicit array typing; the refId below allows $ref to resolve cleanly.
-//             // children: z
-//             //     .array(TreeNode)
-//             //     .optional()
-//             //     .openapi({
-//             //         type: "array",
-//             //         description: "Optional child nodes",
-//             //         // items gets inferred from the $ref to TreeNode; explicit here is okay but not required
-//             //         // items: { $ref: "#/components/schemas/TreeNode" }
-//             //     }),
-//         }).openapi({
-//             // Give the OBJECT a concrete OpenAPI identity
-//             type: "object",
-//             refId: "TreeNode",
-//             description: "Recursive document tree node",
-//         })
-//     )
-//     // Also annotate the LAZY itself (helps some generator paths)
-//     .openapi({ refId: "TreeNode" });
+
+// Explicit top-level response schema so structure is visible in docs
+const TreeResponse = z
+    .object({
+        series: z.object({
+            success: z.boolean().openapi({
+                type: "boolean",
+                description: "Indicates whether the request was successful",
+                example: true,
+            }),
+            result: TreeNode,
+        }),
+    })
+    .openapi({
+        type: "object",
+        refId: "TreeResponse",
+        description: "Response payload containing the document tree.",
+        example: {
+            series: {
+                success: true,
+                result: {
+                    id: "root-1",
+                    title: "Root Node",
+                    children: [
+                        { id: "child-1", title: "First child" },
+                        { id: "child-2", title: "Second child" },
+                    ],
+                },
+            },
+        },
+    });
 
 export class GetDocTree extends OpenAPIRoute {
     schema = {
         tags: ["Documents"],
         summary: "Return the subtree rooted at a document",
+        description:
+            "Retrieves a hierarchical representation of documents under the specified root document. \
+      The `children` field may itself contain further nodes recursively at runtime.",
         security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
-                id: Str({ description: "The document ID to resolve ancestors for" }),
+                id: Str({ description: "The document ID to retrieve the tree for" }),
             }),
-
-            // params: z.object({
-            //     id: z.string().openapi({
-            //         name: "id",
-            //         type: "string",
-            //         description: "Root document ID",
-            //         // 👇 REQUIRED for parameters
-            //         param: { name: "id", in: "path", required: true },
-            //         example: "doc_123",
-            //     }),
-            // }),
-            query: z
-                .object({
-                    depth: z.coerce.number().int().positive().max(100).optional()
-                        .describe("Max results to return (default depends on backend, max 100)"),
-                    // depth: z
-                    //     .string()
-                    //     .openapi({
-                    //         type: "string",
-                    //         description: "Optional max depth as a positive integer",
-                    //         example: "2",
-                    //         // // 👇 REQUIRED for parameters
-                    //         // param: { name: "depth", in: "query", required: false },
-                    //     })
-                    //     .optional(),
-                })
+            query: z.object({
+                depth: z
+                    .number()
+                    .int()
+                    .positive()
+                    .max(100)
+                    .optional()
+                    .openapi({
+                        type: "integer",
+                        description:
+                            "Optional maximum recursion depth to traverse (default: unlimited).",
+                        example: 3,
+                    }),
+            }),
         },
         responses: {
             "200": {
                 description: "Tree retrieved successfully",
                 content: {
                     "application/json": {
-                        schema: z.object({
-                            series: z.object({
-                                success: z.boolean().openapi({ type: "boolean" }),
-                                // result: TreeNodeOA,
-                                // result: z.string().openapi({ type: "string" }),
-                                result: TreeNode,
-                            }),
-                        }),
+                        schema: TreeResponse,
                     },
                 },
             },
@@ -109,7 +130,9 @@ export class GetDocTree extends OpenAPIRoute {
                         schema: z.object({
                             series: z.object({
                                 success: z.boolean().openapi({ type: "boolean" }),
-                                error: z.string().openapi({ type: "string" }),
+                                error: z
+                                    .string()
+                                    .openapi({ type: "string", description: "Error message" }),
                             }),
                         }),
                     },
@@ -121,13 +144,14 @@ export class GetDocTree extends OpenAPIRoute {
     async handle(c) {
         const data = await this.getValidatedData();
         const { id } = data.params;
-        const depthStr = data.query?.depth;
-        const depth = typeof depthStr === "string" && /^\d+$/.test(depthStr) ? parseInt(depthStr, 10) : undefined;
+        const { depth } = data.query || {};
 
-        // TODO: Notion traversal respecting depth
         const exists = true;
         if (!exists) {
-            return Response.json({ series: { success: false, error: "Root document not found" } }, { status: 404 });
+            return Response.json(
+                { series: { success: false, error: "Root document not found" } },
+                { status: 404 }
+            );
         }
 
         const full = {
@@ -135,11 +159,15 @@ export class GetDocTree extends OpenAPIRoute {
             title: "Root Title",
             children: [
                 { id: "child-1", title: "Child 1" },
-                { id: "child-2", title: "Child 2", children: [{ id: "grandchild-2a", title: "Grandchild 2A" }] },
+                {
+                    id: "child-2",
+                    title: "Child 2",
+                    children: [{ id: "grandchild-2a", title: "Grandchild 2A" }],
+                },
             ],
         };
 
-        if (typeof depth === "number" && depth > 0) {
+        if (depth && depth > 0) {
             const prune = (node, d) => {
                 if (d <= 1) return { id: node.id, title: node.title };
                 return {
