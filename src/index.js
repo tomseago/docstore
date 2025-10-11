@@ -81,7 +81,7 @@ openapi.post("/auth/docs/:id/children", CreateChildDoc);
 openapi.patch("/auth/docs/:id/move", MoveDoc);
 
 openapi.get("/auth/docs/:id/ancestors", GetDocAncestors );
-//openapi.get("/auth/docs/:id/tree", GetDocTree );
+openapi.get("/auth/docs/:id/tree", GetDocTree );
 openapi.get("/auth/search", SearchDocs );
 
 // You may also register routes for non OpenAPI directly on Hono

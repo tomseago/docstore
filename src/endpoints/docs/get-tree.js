@@ -1,11 +1,11 @@
-import { OpenAPIRoute } from "chanfana";
+import {OpenAPIRoute, Str} from "chanfana";
 import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 
 extendZodWithOpenApi(z);
 
 // OpenAPI-safe (non-recursive) facade for docs
-const TreeNodeOA = z
+const TreeNode = z
     .object({
         id: z.string().openapi({ type: "string", description: "Document ID" }),
         title: z.string().openapi({ type: "string", description: "Document title" }),
@@ -25,6 +25,30 @@ const TreeNodeOA = z
         refId: "TreeNode",
         description: "Tree node (non-recursive OpenAPI facade).",
     });
+// const TreeNode = z
+//     .lazy(() =>
+//         z.object({
+//             id: z.string().openapi({ type: "string", description: "Document ID" }),
+//             title: z.string().openapi({ type: "string", description: "Document title" }),
+//             // Explicit array typing; the refId below allows $ref to resolve cleanly.
+//             // children: z
+//             //     .array(TreeNode)
+//             //     .optional()
+//             //     .openapi({
+//             //         type: "array",
+//             //         description: "Optional child nodes",
+//             //         // items gets inferred from the $ref to TreeNode; explicit here is okay but not required
+//             //         // items: { $ref: "#/components/schemas/TreeNode" }
+//             //     }),
+//         }).openapi({
+//             // Give the OBJECT a concrete OpenAPI identity
+//             type: "object",
+//             refId: "TreeNode",
+//             description: "Recursive document tree node",
+//         })
+//     )
+//     // Also annotate the LAZY itself (helps some generator paths)
+//     .openapi({ refId: "TreeNode" });
 
 export class GetDocTree extends OpenAPIRoute {
     schema = {
@@ -33,28 +57,34 @@ export class GetDocTree extends OpenAPIRoute {
         security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
-                id: z.string().openapi({
-                    type: "string",
-                    description: "Root document ID",
-                    // 👇 REQUIRED for parameters
-                    param: { name: "id", in: "path", required: true },
-                    example: "doc_123",
-                }),
+                id: Str({ description: "The document ID to resolve ancestors for" }),
             }),
+
+            // params: z.object({
+            //     id: z.string().openapi({
+            //         name: "id",
+            //         type: "string",
+            //         description: "Root document ID",
+            //         // 👇 REQUIRED for parameters
+            //         param: { name: "id", in: "path", required: true },
+            //         example: "doc_123",
+            //     }),
+            // }),
             query: z
                 .object({
-                    depth: z
-                        .string()
-                        .openapi({
-                            type: "string",
-                            description: "Optional max depth as a positive integer",
-                            example: "2",
-                            // 👇 REQUIRED for parameters
-                            param: { name: "depth", in: "query", required: false },
-                        })
-                        .optional(),
+                    depth: z.coerce.number().int().positive().max(100).optional()
+                        .describe("Max results to return (default depends on backend, max 100)"),
+                    // depth: z
+                    //     .string()
+                    //     .openapi({
+                    //         type: "string",
+                    //         description: "Optional max depth as a positive integer",
+                    //         example: "2",
+                    //         // // 👇 REQUIRED for parameters
+                    //         // param: { name: "depth", in: "query", required: false },
+                    //     })
+                    //     .optional(),
                 })
-                .optional(),
         },
         responses: {
             "200": {
@@ -64,7 +94,9 @@ export class GetDocTree extends OpenAPIRoute {
                         schema: z.object({
                             series: z.object({
                                 success: z.boolean().openapi({ type: "boolean" }),
-                                result: TreeNodeOA,
+                                // result: TreeNodeOA,
+                                // result: z.string().openapi({ type: "string" }),
+                                result: TreeNode,
                             }),
                         }),
                     },
